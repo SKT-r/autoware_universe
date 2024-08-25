@@ -1,0 +1,178 @@
+-- Caffe2: CUDA detected: 12.3
+-- Caffe2: CUDA nvcc is: /usr/local/cuda/bin/nvcc
+-- Caffe2: CUDA toolkit directory: /usr/local/cuda
+-- Caffe2: Header version is: 12.3
+-- USE_CUDNN is set to 0. Compiling without cuDNN support
+-- USE_CUSPARSELT is set to 0. Compiling without cuSPARSELt support
+-- Autodetected CUDA architecture(s):  7.5
+-- Added CUDA NVCC flags for: -gencode;arch=compute_75,code=sm_75
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ryomasakata/autoware/src/universe/autoware.universe/localization/nerf_based_localizer/training_tool/build
+Consolidate compiler generated dependencies of target main
+[100%] Built target main
+[Dataset::Dataset] begin
+data_path = /home/ryomasakata/train_data_2
+[LoadImages] begin
+[LoadImages] end in 17.2171 seconds
+Number of images: 503
+[Dataset::Dataset] end in 18.1978 seconds
+グリッドスペース:0.010000
+どうなってる？
+initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]initial_pose elements:
+0.542944 -0.00152149 -0.839767 -0.225179 
+0.839759 -0.00388902 0.542946 0.910123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+各項: 0 0 1 0.010000 172.778900
+grid_pose_x:-0.235179
+[ CUDAFloatType{} ]grid_pose_y:0.900123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:0, gy:0, x_off-0.01, y_off-0.01
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.235179 
+0.839759 -0.00388902 0.542946 0.900123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][0][0] = 47.1445
+各項: 0 1 1 0.010000 172.778900
+grid_pose_x:-0.235179
+[ CUDAFloatType{} ]grid_pose_y:0.910123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:0, gy:1, x_off-0.01, y_off0
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.235179 
+0.839759 -0.00388902 0.542946 0.910123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][0][1] = 76.8527
+各項: 0 2 1 0.010000 172.778900
+grid_pose_x:-0.235179
+[ CUDAFloatType{} ]grid_pose_y:0.920123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:0, gy:2, x_off-0.01, y_off0.01
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.235179 
+0.839759 -0.00388902 0.542946 0.920123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][0][2] = 85.5766
+各項: 1 0 1 0.010000 172.778900
+grid_pose_x:-0.225179
+[ CUDAFloatType{} ]grid_pose_y:0.900123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:1, gy:0, x_off0, y_off-0.01
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.225179 
+0.839759 -0.00388902 0.542946 0.900123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][1][0] = 56.887
+各項: 1 1 1 0.010000 172.778900
+grid_pose_x:-0.225179
+[ CUDAFloatType{} ]grid_pose_y:0.910123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:1, gy:1, x_off0, y_off0
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.225179 
+0.839759 -0.00388902 0.542946 0.910123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][1][1] = 216.427
+各項: 1 2 1 0.010000 172.778900
+grid_pose_x:-0.225179
+[ CUDAFloatType{} ]grid_pose_y:0.920123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:1, gy:2, x_off0, y_off0.01
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.225179 
+0.839759 -0.00388902 0.542946 0.920123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][1][2] = 64.8328
+各項: 2 0 1 0.010000 172.778900
+grid_pose_x:-0.215179
+[ CUDAFloatType{} ]grid_pose_y:0.900123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:2, gy:0, x_off0.01, y_off-0.01
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.215179 
+0.839759 -0.00388902 0.542946 0.900123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][2][0] = 82.7286
+各項: 2 1 1 0.010000 172.778900
+grid_pose_x:-0.215179
+[ CUDAFloatType{} ]grid_pose_y:0.910123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:2, gy:1, x_off0.01, y_off0
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.215179 
+0.839759 -0.00388902 0.542946 0.910123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][2][1] = 70.4255
+各項: 2 2 1 0.010000 172.778900
+grid_pose_x:-0.215179
+[ CUDAFloatType{} ]grid_pose_y:0.920123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:2, gy:2, x_off0.01, y_off0.01
+grid_pose elements:
+0.542944 -0.00152149 -0.839767 -0.215179 
+0.839759 -0.00388902 0.542946 0.920123 
+-0.00409196 -0.999991 -0.000833837 -0.0165311 
+
+score[0][2][2] = 53.1543
+どうなってる？
+initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]initial_pose elements:
+0.542951 -0.00142578 -0.839763 -0.225179 
+0.839756 -0.00368468 0.542952 0.910123 
+-0.00386838 -0.999992 -0.000803296 -0.0165413 
+
+各項: 0 0 1 0.010000 172.778900
+grid_pose_x:-0.235179
+[ CUDAFloatType{} ]grid_pose_y:0.900123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:0, gy:0, x_off-0.01, y_off-0.01
+grid_pose elements:
+0.542951 -0.00142578 -0.839763 -0.235179 
+0.839756 -0.00368468 0.542952 0.900123 
+-0.00386838 -0.999992 -0.000803296 -0.0165413 
+
+score[1][0][0] = 47.0538
+各項: 0 1 1 0.010000 172.778900
+grid_pose_x:-0.235179
+[ CUDAFloatType{} ]grid_pose_y:0.910123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:0, gy:1, x_off-0.01, y_off0
+grid_pose elements:
+0.542951 -0.00142578 -0.839763 -0.235179 
+0.839756 -0.00368468 0.542952 0.910123 
+-0.00386838 -0.999992 -0.000803296 -0.0165413 
+
+score[1][0][1] = 76.3999
+各項: 0 2 1 0.010000 172.778900
+grid_pose_x:-0.235179
+[ CUDAFloatType{} ]grid_pose_y:0.920123
+[ CUDAFloatType{} ]initial_pose_x:-0.225179
+[ CUDAFloatType{} ]initial_pose_y:0.910123
+[ CUDAFloatType{} ]gx:0, gy:2, x_off-0.01, y_off0.01
+grid_pose elements:
+0.542951 -0.00142578 -0.839763 -0.235179 
+0.839756 -0.00368468 0.542952 0.920123 
+-0.00386838 -0.999992 -0.000803296 -0.0165413 

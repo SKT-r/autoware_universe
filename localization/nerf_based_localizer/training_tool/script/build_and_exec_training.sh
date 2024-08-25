@@ -13,4 +13,5 @@ cd ${ROOT_DIR}/build
 rm -rf ${TRAIN_RESULT_DIR}
 mkdir ${TRAIN_RESULT_DIR}
 cp ${ROOT_DIR}/config/train_config.yaml ${TRAIN_RESULT_DIR}/
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 ./main train ${TRAIN_RESULT_DIR} ${DATASET_DIR}
