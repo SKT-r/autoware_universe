@@ -40,6 +40,9 @@ void test(const std::string & train_result_dir, const std::string & dataset_dir)
   float score_sum = 0.0f;
   float time_sum = 0.0f;
 
+  std::ofstream csv_file(train_result_dir + "/scores.csv");
+  csv_file << "i,score\n"; 
+
   for (int32_t i = 0; i < dataset.n_images; i++) {
     torch::Tensor initial_pose = dataset.poses[i];
     torch::Tensor image_tensor = dataset.images[i];
@@ -57,10 +60,15 @@ void test(const std::string & train_result_dir, const std::string & dataset_dir)
     std::cout << "\rscore[" << i << "] = " << score.item<float>() << std::flush;
     score_sum += score.item<float>();
 
+    // CSVファイルに画像番号とscoreを記録
+    csv_file << i << "," << score.item<float>() << "\n";
+
     std::stringstream ss;
     ss << save_dir << std::setfill('0') << std::setw(8) << i << ".png";
     utils::write_image_tensor(ss.str(), nerf_image);
   }
+
+  csv_file.close();
 
   const float average_time = time_sum / dataset.n_images;
   const float average_score = score_sum / dataset.n_images;
