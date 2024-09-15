@@ -64,8 +64,16 @@ void test(const std::string & train_result_dir, const std::string & dataset_dir)
     csv_file << i << "," << score.item<float>() << "\n";
 
     std::stringstream ss;
-    ss << save_dir << std::setfill('0') << std::setw(8) << i << ".png";
+    ss << save_dir << std::setfill('0') << std::setw(4) << i << ".png";
     utils::write_image_tensor(ss.str(), nerf_image);
+
+    std::stringstream ssr;
+    ssr << save_dir << std::setfill('0') << std::setw(4) << i << "_diff" << ".png";
+    utils::write_image_tensor(ssr.str(), diff.flip(2));
+
+    std::stringstream sst;
+    sst << save_dir << std::setfill('0') << std::setw(4) << i << "_resize" << ".png";
+    utils::write_image_tensor(sst.str(), image_tensor);
   }
 
   csv_file.close();
