@@ -4,3 +4,4 @@
     timer_callback_interval_sec: 0.5 # [sec]
     diagnostics_updater_interval_sec: 0.5 # [sec]
     straight_motion_ang_vel_upper_limit: 0.015 # [rad/s]
+    stopping_vel_upper_limit: 0.001 # [rad/s]

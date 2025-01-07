@@ -71,6 +71,7 @@ private:
   const double timer_callback_interval_sec_;
   const double diagnostics_updater_interval_sec_;
   const double straight_motion_ang_vel_upper_limit_;
+  const double velocity_threshold_;
 
   diagnostic_updater::Updater updater_;
 
@@ -93,7 +94,24 @@ private:
     double estimated_gyro_bias_x;
     double estimated_gyro_bias_y;
     double estimated_gyro_bias_z;
+    double stationary_bias_x;
+    double stationary_bias_y;
+    double stationary_bias_z;
   };
+
+  // Add
+private:
+  geometry_msgs::msg::Vector3 stationary_gyro_bias_;
+  rclcpp::Publisher<Vector3Stamped>::SharedPtr stationary_gyro_bias_pub_;
+  bool has_stationary_bias_;
+  // double velocity_threshold_;  // Threshold for determining if vehicle is stationary
+
+  // New helper functions
+  void estimate_and_publish_bias(
+    const std::vector<geometry_msgs::msg::PoseStamped> & pose_buf,
+    const std::vector<geometry_msgs::msg::Vector3Stamped> & gyro_filtered,
+    const geometry_msgs::msg::TransformStamped & tf_base2imu);
+  bool is_vehicle_stationary(const Odometry::ConstSharedPtr & odom_msg) const;
 
   DiagnosticsInfo diagnostics_info_;
 };
