@@ -35,10 +35,8 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
   diagnostics_updater_interval_sec_(declare_parameter<double>("diagnostics_updater_interval_sec")),
   straight_motion_ang_vel_upper_limit_(
     declare_parameter<double>("straight_motion_ang_vel_upper_limit")),
-  velocity_threshold_(declare_parameter<double>("stopping_vel_upper_limit")),  // m/s
   updater_(this),
-  gyro_bias_(std::nullopt),
-  has_stationary_bias_(false)
+  gyro_bias_(std::nullopt)
 {
   updater_.setHardwareID(get_name());
   updater_.add("gyro_bias_validator", this, &GyroBiasEstimator::update_diagnostics);
@@ -46,6 +44,7 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
   updater_.setPeriod(diagnostics_updater_interval_sec_);
 
   gyro_bias_estimation_module_ = std::make_unique<GyroBiasEstimationModule>();
+  gyro_bias_estimation_module_all_state_ = std::make_unique<GyroBiasEstimationModule>();
 
   imu_sub_ = create_subscription<Imu>(
     "~/input/imu_raw", rclcpp::SensorDataQoS(),
@@ -54,8 +53,9 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
     "~/input/odom", rclcpp::SensorDataQoS(),
     [this](const Odometry::ConstSharedPtr msg) { callback_odom(msg); });
   gyro_bias_pub_ = create_publisher<Vector3Stamped>("~/output/gyro_bias", rclcpp::SensorDataQoS());
-  stationary_gyro_bias_pub_ =
-    create_publisher<Vector3Stamped>("~/output/stationary_gyro_bias", rclcpp::SensorDataQoS());
+  gyro_bias_all_state_pub_ =
+    create_publisher<Vector3Stamped>("~/output/gyro_bias_all_state", rclcpp::SensorDataQoS());
+  gyro_bias_all_state_ = std::nullopt;
 
   auto bound_timer_callback = std::bind(&GyroBiasEstimator::timer_callback, this);
   auto period_control = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -77,9 +77,6 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
     diagnostics_info_.estimated_gyro_bias_x = std::nan("");
     diagnostics_info_.estimated_gyro_bias_y = std::nan("");
     diagnostics_info_.estimated_gyro_bias_z = std::nan("");
-    diagnostics_info_.stationary_bias_x = std::nan("");
-    diagnostics_info_.stationary_bias_y = std::nan("");
-    diagnostics_info_.stationary_bias_z = std::nan("");
   }
 }
 
@@ -90,7 +87,8 @@ void GyroBiasEstimator::callback_imu(const Imu::ConstSharedPtr imu_msg_ptr)
     transform_listener_->getLatestTransform(imu_frame_, output_frame_);
   if (!tf_imu2base_ptr) {
     RCLCPP_ERROR(
-      his->get_logger(), "Please publish TF %s to %s", output_frame_.c_str(), (imu_frame_).c_str());
+      this->get_logger(), "Please publish TF %s to %s", output_frame_.c_str(),
+      (imu_frame_).c_str());
     return;
   }
 
@@ -99,13 +97,22 @@ void GyroBiasEstimator::callback_imu(const Imu::ConstSharedPtr imu_msg_ptr)
   gyro.vector = transform_vector3(imu_msg_ptr->angular_velocity, *tf_imu2base_ptr);
 
   gyro_all_.push_back(gyro);
-}
 
-bool GyroBiasEstimator::is_vehicle_stationary(const Odometry::ConstSharedPtr & odom_msg) const
-{
-  const double linear_velocity = std::hypot(
-    odom_msg->twist.twist.linear.x, odom_msg->twist.twist.linear.y, odom_msg->twist.twist.linear.z);
-  return linear_velocity < velocity_threshold_;
+  // Publish results for debugging
+  if (gyro_bias_ != std::nullopt) {
+    Vector3Stamped gyro_bias_msg;
+    gyro_bias_msg.header.stamp = this->now();
+    gyro_bias_msg.vector = gyro_bias_.value();
+    gyro_bias_pub_->publish(gyro_bias_msg);
+  }
+
+  // 追加：全状態のバイアスもpublish
+  if (gyro_bias_all_state_ != std::nullopt) {
+    Vector3Stamped gyro_bias_all_state_msg;
+    gyro_bias_all_state_msg.header.stamp = this->now();
+    gyro_bias_all_state_msg.vector = gyro_bias_all_state_.value();
+    gyro_bias_all_state_pub_->publish(gyro_bias_all_state_msg);
+  }
 }
 
 void GyroBiasEstimator::callback_odom(const Odometry::ConstSharedPtr odom_msg_ptr)
@@ -114,51 +121,6 @@ void GyroBiasEstimator::callback_odom(const Odometry::ConstSharedPtr odom_msg_pt
   pose.header = odom_msg_ptr->header;
   pose.pose = odom_msg_ptr->pose.pose;
   pose_buf_.push_back(pose);
-}
-
-void GyroBiasEstimator::estimate_and_publish_bias(
-  const std::vector<geometry_msgs::msg::PoseStamped> & pose_buf,
-  const std::vector<geometry_msgs::msg::Vector3Stamped> & gyro_filtered,
-  const geometry_msgs::msg::TransformStamped & tf_base2imu)
-{
-  // Calculate gyro bias
-  gyro_bias_estimation_module_->update_bias(pose_buf, gyro_filtered);
-
-  auto estimated_bias =
-    transform_vector3(gyro_bias_estimation_module_->get_bias_base_link(), tf_base2imu);
-
-  // Check if the vehicle is moving straight
-  const geometry_msgs::msg::Vector3 rpy_0 =
-    autoware::universe_utils::getRPY(pose_buf.front().pose.orientation);
-  const geometry_msgs::msg::Vector3 rpy_1 =
-    autoware::universe_utils::getRPY(pose_buf.back().pose.orientation);
-  const double yaw_diff = std::abs(autoware::universe_utils::normalizeRadian(rpy_1.z - rpy_0.z));
-  const double time_diff =
-    (rclcpp::Time(pose_buf.back().header.stamp) - rclcpp::Time(pose_buf.front().header.stamp))
-      .seconds();
-  const double yaw_vel = yaw_diff / time_diff;
-  const bool is_straight = (yaw_vel < straight_motion_ang_vel_upper_limit_);
-
-  // Store and publish the bias based on motion state
-  if (!is_straight) {
-    gyro_bias_ = estimated_bias;
-
-    // Publish motion-based bias
-    Vector3Stamped gyro_bias_msg;
-    gyro_bias_msg.header.stamp = this->now();
-    gyro_bias_msg.vector = gyro_bias_.value();
-    gyro_bias_pub_->publish(gyro_bias_msg);
-  } else {
-    // Update stationary bias
-    stationary_gyro_bias_ = estimated_bias;
-    has_stationary_bias_ = true;
-
-    // Publish stationary bias
-    Vector3Stamped stationary_bias_msg;
-    stationary_bias_msg.header.stamp = this->now();
-    stationary_bias_msg.vector = stationary_gyro_bias_;
-    stationary_gyro_bias_pub_->publish(stationary_bias_msg);
-  }
 }
 
 void GyroBiasEstimator::timer_callback()
@@ -192,50 +154,59 @@ void GyroBiasEstimator::timer_callback()
   }
 
   // Check gyro data size
+  // Data size must be greater than or equal to 2 since the time difference will be taken later
   if (gyro_filtered.size() <= 1) {
     diagnostics_info_.summary_message = "Skipped update (gyro_filtered size is less than 2)";
     return;
   }
 
+  // 座標変換
   geometry_msgs::msg::TransformStamped::ConstSharedPtr tf_base2imu_ptr =
     transform_listener_->getLatestTransform(output_frame_, imu_frame_);
   if (!tf_base2imu_ptr) {
     RCLCPP_ERROR(
       this->get_logger(), "Please publish TF %s to %s", imu_frame_.c_str(), output_frame_.c_str());
+
     diagnostics_info_.summary_message = "Skipped update (tf between base and imu is not available)";
     return;
   }
+  // すべての状態で推定したバイアス
+  //  Update and publish all-state bias
+  gyro_bias_estimation_module_all_state_->update_bias(pose_buf, gyro_filtered);
+  gyro_bias_all_state_ = transform_vector3(
+    gyro_bias_estimation_module_all_state_->get_bias_base_link(), *tf_base2imu_ptr);
 
-  // Estimate and publish bias
-  estimate_and_publish_bias(pose_buf, gyro_filtered, *tf_base2imu_ptr);
+  // Check if the vehicle is moving straight
+  const geometry_msgs::msg::Vector3 rpy_0 =
+    autoware::universe_utils::getRPY(pose_buf.front().pose.orientation);
+  const geometry_msgs::msg::Vector3 rpy_1 =
+    autoware::universe_utils::getRPY(pose_buf.back().pose.orientation);
+  const double yaw_diff = std::abs(autoware::universe_utils::normalizeRadian(rpy_1.z - rpy_0.z));
+  const double time_diff = (t1_rclcpp_time - t0_rclcpp_time).seconds();
+  const double yaw_vel = yaw_diff / time_diff;
+  const bool is_straight = (yaw_vel < straight_motion_ang_vel_upper_limit_);
+
+  // Only update stationary bias if the vehicle is straight
+  if (is_straight) {
+    gyro_bias_estimation_module_->update_bias(pose_buf, gyro_filtered);
+    gyro_bias_ =
+      transform_vector3(gyro_bias_estimation_module_->get_bias_base_link(), *tf_base2imu_ptr);
+  }
 
   validate_gyro_bias();
   updater_.force_update();
-  updater_.setPeriod(diagnostics_updater_interval_sec_);
+  updater_.setPeriod(diagnostics_updater_interval_sec_);  // to reset timer inside the updater
 }
 
 void GyroBiasEstimator::validate_gyro_bias()
 {
-  if (!gyro_bias_.has_value()) {
-    diagnostics_info_.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
-    diagnostics_info_.summary_message = "No bias estimation available";
-    return;
-  }
-
-  // Calculate diagnostics key-values for motion-based bias
+  // Calculate diagnostics key-values
   diagnostics_info_.gyro_bias_x_for_imu_corrector = gyro_bias_.value().x;
   diagnostics_info_.gyro_bias_y_for_imu_corrector = gyro_bias_.value().y;
   diagnostics_info_.gyro_bias_z_for_imu_corrector = gyro_bias_.value().z;
   diagnostics_info_.estimated_gyro_bias_x = gyro_bias_.value().x - angular_velocity_offset_x_;
   diagnostics_info_.estimated_gyro_bias_y = gyro_bias_.value().y - angular_velocity_offset_y_;
   diagnostics_info_.estimated_gyro_bias_z = gyro_bias_.value().z - angular_velocity_offset_z_;
-
-  // Add stationary bias to diagnostics if available
-  if (has_stationary_bias_) {
-    diagnostics_info_.stationary_bias_x = stationary_gyro_bias_.x - angular_velocity_offset_x_;
-    diagnostics_info_.stationary_bias_y = stationary_gyro_bias_.y - angular_velocity_offset_y_;
-    diagnostics_info_.stationary_bias_z = stationary_gyro_bias_.z - angular_velocity_offset_z_;
-  }
 
   // Validation
   const bool is_bias_small_enough =
@@ -250,7 +221,8 @@ void GyroBiasEstimator::validate_gyro_bias()
   } else {
     diagnostics_info_.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
     diagnostics_info_.summary_message =
-      "Gyro bias may be incorrect. Please calibrate IMU and reflect the result in imu_corrector.";
+      "Gyro bias may be incorrect. Please calibrate IMU and reflect the result in imu_corrector. "
+      "You may also use the output of gyro_bias_estimator.";
   }
 }
 

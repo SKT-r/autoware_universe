@@ -60,9 +60,12 @@ private:
   rclcpp::Subscription<Imu>::SharedPtr imu_sub_;
   rclcpp::Subscription<Odometry>::SharedPtr odom_sub_;
   rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_pub_;
+  rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_all_state_pub_;  // 追加
+
   rclcpp::TimerBase::SharedPtr timer_;
 
   std::unique_ptr<GyroBiasEstimationModule> gyro_bias_estimation_module_;
+  std::unique_ptr<GyroBiasEstimationModule> gyro_bias_estimation_module_all_state_;
 
   const double gyro_bias_threshold_;
   const double angular_velocity_offset_x_;
@@ -71,11 +74,11 @@ private:
   const double timer_callback_interval_sec_;
   const double diagnostics_updater_interval_sec_;
   const double straight_motion_ang_vel_upper_limit_;
-  const double velocity_threshold_;
 
   diagnostic_updater::Updater updater_;
 
   std::optional<Vector3> gyro_bias_;
+  std::optional<Vector3> gyro_bias_all_state_;  // 追加
 
   std::shared_ptr<autoware::universe_utils::TransformListener> transform_listener_;
 
@@ -94,24 +97,7 @@ private:
     double estimated_gyro_bias_x;
     double estimated_gyro_bias_y;
     double estimated_gyro_bias_z;
-    double stationary_bias_x;
-    double stationary_bias_y;
-    double stationary_bias_z;
   };
-
-  // Add
-private:
-  geometry_msgs::msg::Vector3 stationary_gyro_bias_;
-  rclcpp::Publisher<Vector3Stamped>::SharedPtr stationary_gyro_bias_pub_;
-  bool has_stationary_bias_;
-  // double velocity_threshold_;  // Threshold for determining if vehicle is stationary
-
-  // New helper functions
-  void estimate_and_publish_bias(
-    const std::vector<geometry_msgs::msg::PoseStamped> & pose_buf,
-    const std::vector<geometry_msgs::msg::Vector3Stamped> & gyro_filtered,
-    const geometry_msgs::msg::TransformStamped & tf_base2imu);
-  bool is_vehicle_stationary(const Odometry::ConstSharedPtr & odom_msg) const;
 
   DiagnosticsInfo diagnostics_info_;
 };
