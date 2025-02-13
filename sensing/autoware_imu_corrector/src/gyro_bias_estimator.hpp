@@ -60,7 +60,7 @@ private:
   rclcpp::Subscription<Imu>::SharedPtr imu_sub_;
   rclcpp::Subscription<Odometry>::SharedPtr odom_sub_;
   rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_pub_;
-  rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_all_state_pub_;  // 追加
+  rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_all_state_pub_;
 
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -78,8 +78,7 @@ private:
   diagnostic_updater::Updater updater_;
 
   std::optional<Vector3> gyro_bias_;
-  std::optional<Vector3> gyro_bias_all_state_;  // 追加
-
+  std::optional<Vector3> gyro_bias_all_state_;
   std::shared_ptr<autoware::universe_utils::TransformListener> transform_listener_;
 
   std::string imu_frame_;

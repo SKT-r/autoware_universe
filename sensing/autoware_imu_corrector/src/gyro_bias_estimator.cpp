@@ -133,6 +133,7 @@ void GyroBiasEstimator::timer_callback()
   // Copy data
   const std::vector<geometry_msgs::msg::PoseStamped> pose_buf = pose_buf_;
   const std::vector<geometry_msgs::msg::Vector3Stamped> gyro_all = gyro_all_;
+  //一定時間（サンプル数）で切るように変更したい（今は0.5s）
   pose_buf_.clear();
   gyro_all_.clear();
 

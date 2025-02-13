@@ -18,6 +18,7 @@
 #include <autoware/universe_utils/ros/transform_listener.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
 #include <tf2_ros/buffer.h>
@@ -37,10 +38,14 @@ public:
 
 private:
   void callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg_ptr);
+  void callback_gyro_bias(const geometry_msgs::msg::Vector3Stamped::ConstSharedPtr bias_msg_ptr);
 
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
 
   rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
+
+  rclcpp::Subscription<geometry_msgs::msg::Vector3Stamped>::SharedPtr gyro_bias_sub_;
+  std::optional<geometry_msgs::msg::Vector3> current_gyro_bias_;  // 最新のバイアス値を保持
 
   double angular_velocity_offset_x_imu_link_;
   double angular_velocity_offset_y_imu_link_;

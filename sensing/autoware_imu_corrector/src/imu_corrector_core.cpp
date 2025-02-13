@@ -81,14 +81,29 @@ ImuCorrector::ImuCorrector(const rclcpp::NodeOptions & options)
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("output", rclcpp::QoS{10});
 }
 
+void ImuCorrector::callback_gyro_bias(
+  const geometry_msgs::msg::Vector3Stamped::ConstSharedPtr bias_msg_ptr)
+{
+  current_gyro_bias_ = bias_msg_ptr->vector;
+}
+
 void ImuCorrector::callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg_ptr)
 {
   sensor_msgs::msg::Imu imu_msg;
   imu_msg = *imu_msg_ptr;
 
-  imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
-  imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
-  imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
+  // バイアス補正の変更
+  // 推定バイアスが利用可能な場合はそれを使用し、そうでない場合は固定値を使用
+  // サンプル200点ぐらいほしい。残渣（バイアス値そのまま）見る
+  if (current_gyro_bias_) {
+    imu_msg.angular_velocity.x -= current_gyro_bias_->x;
+    imu_msg.angular_velocity.y -= current_gyro_bias_->y;
+    imu_msg.angular_velocity.z -= current_gyro_bias_->z;
+  } else {
+    imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
+    imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
+    imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
+  }
 
   imu_msg.angular_velocity_covariance[COV_IDX::X_X] =
     angular_velocity_stddev_xx_imu_link_ * angular_velocity_stddev_xx_imu_link_;
