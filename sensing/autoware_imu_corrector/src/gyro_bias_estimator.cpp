@@ -97,6 +97,10 @@ void GyroBiasEstimator::callback_imu(const Imu::ConstSharedPtr imu_msg_ptr)
   gyro.vector = transform_vector3(imu_msg_ptr->angular_velocity, *tf_imu2base_ptr);
 
   gyro_all_.push_back(gyro);
+  // FIFOの制限を実装
+  if (gyro_all_.size() > MAX_BUFFER_SIZE) {
+    gyro_all_.erase(gyro_all_.begin());
+  }
 
   // Publish results for debugging
   if (gyro_bias_ != std::nullopt) {
@@ -106,7 +110,6 @@ void GyroBiasEstimator::callback_imu(const Imu::ConstSharedPtr imu_msg_ptr)
     gyro_bias_pub_->publish(gyro_bias_msg);
   }
 
-  // 追加：全状態のバイアスもpublish
   if (gyro_bias_all_state_ != std::nullopt) {
     Vector3Stamped gyro_bias_all_state_msg;
     gyro_bias_all_state_msg.header.stamp = this->now();
@@ -121,6 +124,10 @@ void GyroBiasEstimator::callback_odom(const Odometry::ConstSharedPtr odom_msg_pt
   pose.header = odom_msg_ptr->header;
   pose.pose = odom_msg_ptr->pose.pose;
   pose_buf_.push_back(pose);
+  // FIFOの制限を実装
+  if (pose_buf_.size() > MAX_BUFFER_SIZE) {
+    pose_buf_.erase(pose_buf_.begin());
+  }
 }
 
 void GyroBiasEstimator::timer_callback()
@@ -133,9 +140,6 @@ void GyroBiasEstimator::timer_callback()
   // Copy data
   const std::vector<geometry_msgs::msg::PoseStamped> pose_buf = pose_buf_;
   const std::vector<geometry_msgs::msg::Vector3Stamped> gyro_all = gyro_all_;
-  //一定時間（サンプル数）で切るように変更したい（今は0.5s）
-  pose_buf_.clear();
-  gyro_all_.clear();
 
   // Check time
   const rclcpp::Time t0_rclcpp_time = rclcpp::Time(pose_buf.front().header.stamp);
