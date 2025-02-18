@@ -71,7 +71,7 @@ private:
   const double timer_callback_interval_sec_;
   const double diagnostics_updater_interval_sec_;
   const double straight_motion_ang_vel_upper_limit_;
-  static constexpr size_t MAX_BUFFER_SIZE = 50;  // 保持する最大サンプル数
+  static constexpr size_t MAX_BUFFER_SIZE = 250;  // 保持する最大サンプル数
 
   diagnostic_updater::Updater updater_;
 

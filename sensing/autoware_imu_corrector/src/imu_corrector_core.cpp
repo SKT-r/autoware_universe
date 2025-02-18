@@ -92,17 +92,15 @@ void ImuCorrector::callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_
   sensor_msgs::msg::Imu imu_msg;
   imu_msg = *imu_msg_ptr;
 
-  // バイアス補正の変更
-  // 推定バイアスが利用可能な場合はそれを使用し、そうでない場合は固定値を使用
-  // サンプル200点ぐらいほしい。残渣（バイアス値そのまま）見る
+  // If the estimated gyro bias is available, use it; otherwise, use a fixed value.
   if (current_gyro_bias_) {
-    imu_msg.angular_velocity.x -= current_gyro_bias_->x;
-    imu_msg.angular_velocity.y -= current_gyro_bias_->y;
+    // imu_msg.angular_velocity.x -= current_gyro_bias_->x;
+    // imu_msg.angular_velocity.y -= current_gyro_bias_->y;
     imu_msg.angular_velocity.z -= current_gyro_bias_->z;
   } else {
-    imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
-    imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
-    imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
+  imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
+  imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
+  imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
   }
 
   imu_msg.angular_velocity_covariance[COV_IDX::X_X] =
