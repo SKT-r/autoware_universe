@@ -60,12 +60,9 @@ private:
   rclcpp::Subscription<Imu>::SharedPtr imu_sub_;
   rclcpp::Subscription<Odometry>::SharedPtr odom_sub_;
   rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_pub_;
-  rclcpp::Publisher<Vector3Stamped>::SharedPtr gyro_bias_all_state_pub_;
-
   rclcpp::TimerBase::SharedPtr timer_;
 
   std::unique_ptr<GyroBiasEstimationModule> gyro_bias_estimation_module_;
-  std::unique_ptr<GyroBiasEstimationModule> gyro_bias_estimation_module_all_state_;
 
   const double gyro_bias_threshold_;
   const double angular_velocity_offset_x_;
@@ -74,12 +71,12 @@ private:
   const double timer_callback_interval_sec_;
   const double diagnostics_updater_interval_sec_;
   const double straight_motion_ang_vel_upper_limit_;
-  static constexpr size_t MAX_BUFFER_SIZE = 5000;  // 保持する最大サンプル数
+  static constexpr size_t MAX_BUFFER_SIZE = 50;  // 保持する最大サンプル数
 
   diagnostic_updater::Updater updater_;
 
   std::optional<Vector3> gyro_bias_;
-  std::optional<Vector3> gyro_bias_all_state_;
+
   std::shared_ptr<autoware::universe_utils::TransformListener> transform_listener_;
 
   std::string imu_frame_;

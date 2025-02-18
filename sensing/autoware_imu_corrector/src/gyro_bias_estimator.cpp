@@ -40,11 +40,9 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
 {
   updater_.setHardwareID(get_name());
   updater_.add("gyro_bias_validator", this, &GyroBiasEstimator::update_diagnostics);
-  // diagnostic_updater is designed to be updated at the same rate as the timer
   updater_.setPeriod(diagnostics_updater_interval_sec_);
 
   gyro_bias_estimation_module_ = std::make_unique<GyroBiasEstimationModule>();
-  gyro_bias_estimation_module_all_state_ = std::make_unique<GyroBiasEstimationModule>();
 
   imu_sub_ = create_subscription<Imu>(
     "~/input/imu_raw", rclcpp::SensorDataQoS(),
@@ -53,9 +51,6 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
     "~/input/odom", rclcpp::SensorDataQoS(),
     [this](const Odometry::ConstSharedPtr msg) { callback_odom(msg); });
   gyro_bias_pub_ = create_publisher<Vector3Stamped>("~/output/gyro_bias", rclcpp::SensorDataQoS());
-  gyro_bias_all_state_pub_ =
-    create_publisher<Vector3Stamped>("~/output/gyro_bias_all_state", rclcpp::SensorDataQoS());
-  gyro_bias_all_state_ = std::nullopt;
 
   auto bound_timer_callback = std::bind(&GyroBiasEstimator::timer_callback, this);
   auto period_control = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -109,13 +104,6 @@ void GyroBiasEstimator::callback_imu(const Imu::ConstSharedPtr imu_msg_ptr)
     gyro_bias_msg.vector = gyro_bias_.value();
     gyro_bias_pub_->publish(gyro_bias_msg);
   }
-
-  if (gyro_bias_all_state_ != std::nullopt) {
-    Vector3Stamped gyro_bias_all_state_msg;
-    gyro_bias_all_state_msg.header.stamp = this->now();
-    gyro_bias_all_state_msg.vector = gyro_bias_all_state_.value();
-    gyro_bias_all_state_pub_->publish(gyro_bias_all_state_msg);
-  }
 }
 
 void GyroBiasEstimator::callback_odom(const Odometry::ConstSharedPtr odom_msg_ptr)
@@ -165,22 +153,6 @@ void GyroBiasEstimator::timer_callback()
     return;
   }
 
-  // 座標変換
-  geometry_msgs::msg::TransformStamped::ConstSharedPtr tf_base2imu_ptr =
-    transform_listener_->getLatestTransform(output_frame_, imu_frame_);
-  if (!tf_base2imu_ptr) {
-    RCLCPP_ERROR(
-      this->get_logger(), "Please publish TF %s to %s", imu_frame_.c_str(), output_frame_.c_str());
-
-    diagnostics_info_.summary_message = "Skipped update (tf between base and imu is not available)";
-    return;
-  }
-  // すべての状態で推定したバイアス
-  //  Update and publish all-state bias
-  gyro_bias_estimation_module_all_state_->update_bias(pose_buf, gyro_filtered);
-  gyro_bias_all_state_ = transform_vector3(
-    gyro_bias_estimation_module_all_state_->get_bias_base_link(), *tf_base2imu_ptr);
-
   // Check if the vehicle is moving straight
   const geometry_msgs::msg::Vector3 rpy_0 =
     autoware::universe_utils::getRPY(pose_buf.front().pose.orientation);
@@ -190,17 +162,29 @@ void GyroBiasEstimator::timer_callback()
   const double time_diff = (t1_rclcpp_time - t0_rclcpp_time).seconds();
   const double yaw_vel = yaw_diff / time_diff;
   const bool is_straight = (yaw_vel < straight_motion_ang_vel_upper_limit_);
-
-  // Only update stationary bias if the vehicle is straight
-  if (is_straight) {
-    gyro_bias_estimation_module_->update_bias(pose_buf, gyro_filtered);
-    gyro_bias_ =
-      transform_vector3(gyro_bias_estimation_module_->get_bias_base_link(), *tf_base2imu_ptr);
+  if (!is_straight) {
+    diagnostics_info_.summary_message =
+      "Skipped update (yaw angular velocity is greater than straight_motion_ang_vel_upper_limit)";
+    return;
   }
 
+  // Calculate gyro bias
+  gyro_bias_estimation_module_->update_bias(pose_buf, gyro_filtered);
+
+  geometry_msgs::msg::TransformStamped::ConstSharedPtr tf_base2imu_ptr =
+    transform_listener_->getLatestTransform(output_frame_, imu_frame_);
+  if (!tf_base2imu_ptr) {
+    RCLCPP_ERROR(
+      this->get_logger(), "Please publish TF %s to %s", imu_frame_.c_str(), output_frame_.c_str());
+
+    diagnostics_info_.summary_message = "Skipped update (tf between base and imu is not available)";
+    return;
+  }
+
+  gyro_bias_ =
+    transform_vector3(gyro_bias_estimation_module_->get_bias_base_link(), *tf_base2imu_ptr);
+
   validate_gyro_bias();
-  updater_.force_update();
-  updater_.setPeriod(diagnostics_updater_interval_sec_);  // to reset timer inside the updater
 }
 
 void GyroBiasEstimator::validate_gyro_bias()
