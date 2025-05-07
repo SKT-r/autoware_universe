@@ -8,6 +8,7 @@
 
   <node pkg="autoware_imu_corrector" exec="gyro_bias_estimator_node" output="both">
     <remap from="~/input/imu_raw" to="$(var input_imu_raw)"/>
+    <!-- input_vehicle_twist入れないといけない -->
     <remap from="~/input/odom" to="$(var input_odom)"/>
     <remap from="~/output/gyro_bias" to="$(var output_gyro_bias)"/>
     <param from="$(var gyro_bias_estimator_param_file)"/>

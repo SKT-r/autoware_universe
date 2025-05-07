@@ -112,7 +112,7 @@ void GyroBiasEstimator::callback_odom(const Odometry::ConstSharedPtr odom_msg_pt
   pose.header = odom_msg_ptr->header;
   pose.pose = odom_msg_ptr->pose.pose;
   pose_buf_.push_back(pose);
-  // FIFOの制限を実装
+  // FIFOの制限を実装。停止しているときだけ入れる
   if (pose_buf_.size() > MAX_BUFFER_SIZE) {
     pose_buf_.erase(pose_buf_.begin());
   }

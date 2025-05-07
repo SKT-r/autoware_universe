@@ -78,6 +78,11 @@ ImuCorrector::ImuCorrector(const rclcpp::NodeOptions & options)
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
     "input", rclcpp::QoS{1}, std::bind(&ImuCorrector::callback_imu, this, std::placeholders::_1));
 
+  // ジャイロバイアスのサブスクリプションを追加
+  gyro_bias_sub_ = create_subscription<geometry_msgs::msg::Vector3Stamped>(
+    "~/input/gyro_bias", rclcpp::QoS{10},  // パスを修正
+    std::bind(&ImuCorrector::callback_gyro_bias, this, std::placeholders::_1));
+
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("output", rclcpp::QoS{10});
 }
 
@@ -85,6 +90,9 @@ void ImuCorrector::callback_gyro_bias(
   const geometry_msgs::msg::Vector3Stamped::ConstSharedPtr bias_msg_ptr)
 {
   current_gyro_bias_ = bias_msg_ptr->vector;
+  RCLCPP_INFO(
+    this->get_logger(), "どうだ！！！: x=%f, y=%f, z=%f", bias_msg_ptr->vector.x,
+    bias_msg_ptr->vector.y, bias_msg_ptr->vector.z);
 }
 
 void ImuCorrector::callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg_ptr)
@@ -96,11 +104,15 @@ void ImuCorrector::callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_
   if (current_gyro_bias_) {
     // imu_msg.angular_velocity.x -= current_gyro_bias_->x;
     // imu_msg.angular_velocity.y -= current_gyro_bias_->y;
+    imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
+    imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
     imu_msg.angular_velocity.z -= current_gyro_bias_->z;
+    RCLCPP_INFO(this->get_logger(), "止まった！！！");
   } else {
-  imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
-  imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
-  imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
+    imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
+    imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
+    imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
+    RCLCPP_INFO(this->get_logger(), "動いた！！！");
   }
 
   imu_msg.angular_velocity_covariance[COV_IDX::X_X] =
