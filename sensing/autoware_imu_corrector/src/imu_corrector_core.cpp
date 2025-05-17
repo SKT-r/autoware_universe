@@ -80,7 +80,7 @@ ImuCorrector::ImuCorrector(const rclcpp::NodeOptions & options)
 
   // ジャイロバイアスのサブスクリプションを追加
   gyro_bias_sub_ = create_subscription<geometry_msgs::msg::Vector3Stamped>(
-    "~/input/gyro_bias", rclcpp::QoS{10},  // パスを修正
+    "gyro_bias", rclcpp::QoS{10},  // パスを修正
     std::bind(&ImuCorrector::callback_gyro_bias, this, std::placeholders::_1));
 
   imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("output", rclcpp::QoS{10});

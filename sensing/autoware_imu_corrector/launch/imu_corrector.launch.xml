@@ -8,7 +8,7 @@
   <node pkg="autoware_imu_corrector" exec="imu_corrector_node" output="both">
     <remap from="input" to="$(var input_topic)"/>
     <remap from="output" to="$(var output_topic)"/>
-    <remap from="~/input/gyro_bias" to="$(var input_gyro_bias)"/> 
+    <remap from="gyro_bias" to="$(var input_gyro_bias)"/> 
     <param from="$(var param_file)"/>
   </node>
 </launch>

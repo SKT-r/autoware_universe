@@ -51,6 +51,9 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
     "~/input/odom", rclcpp::SensorDataQoS(),
     [this](const Odometry::ConstSharedPtr msg) { callback_odom(msg); });
   gyro_bias_pub_ = create_publisher<Vector3Stamped>("~/output/gyro_bias", rclcpp::SensorDataQoS());
+  twist_with_covariance_sub_ = create_subscription<geometry_msgs::msg::TwistWithCovarianceStamped>(
+    "/twist_with_covariance", rclcpp::QoS{10},
+    std::bind(&GyroBiasEstimator::callback_twist_with_covariance, this, std::placeholders::_1));
 
   auto bound_timer_callback = std::bind(&GyroBiasEstimator::timer_callback, this);
   auto period_control = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -116,6 +119,16 @@ void GyroBiasEstimator::callback_odom(const Odometry::ConstSharedPtr odom_msg_pt
   if (pose_buf_.size() > MAX_BUFFER_SIZE) {
     pose_buf_.erase(pose_buf_.begin());
   }
+}
+
+void GyroBiasEstimator::callback_twist_with_covariance(
+  const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr msg)
+{
+  latest_twist_with_covariance_msg_ = msg;
+  RCLCPP_INFO(
+    this->get_logger(),
+    "Received twist_with_covariance: linear.x=%.6f, linear.y=%.6f, angular.z=%.6f",
+    msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.angular.z);
 }
 
 void GyroBiasEstimator::timer_callback()
