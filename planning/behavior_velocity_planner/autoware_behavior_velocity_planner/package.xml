@@ -44,6 +44,7 @@
   <depend>autoware_universe_utils</depend>
   <depend>autoware_velocity_smoother</depend>
   <depend>diagnostic_msgs</depend>
+  <depend>grid_map_core</depend>
   <depend>eigen</depend>
   <depend>geometry_msgs</depend>
   <depend>libboost-dev</depend>
