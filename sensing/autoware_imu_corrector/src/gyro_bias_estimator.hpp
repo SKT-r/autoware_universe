@@ -74,7 +74,10 @@ private:
   const double angular_velocity_offset_z_;
   const double timer_callback_interval_sec_;
   const double diagnostics_updater_interval_sec_;
-  const double straight_motion_ang_vel_upper_limit_;
+  // const double straight_motion_ang_vel_upper_limit_;
+  // 新しく追加
+  const double vehicle_stop_velocity_threshold_;
+  const double vehicle_stop_angular_velocity_threshold_;
   static constexpr size_t MAX_BUFFER_SIZE = 250;  // 保持する最大サンプル数
 
   diagnostic_updater::Updater updater_;

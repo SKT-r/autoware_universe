@@ -105,12 +105,12 @@ void ImuCorrector::callback_imu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_
     imu_msg.angular_velocity.x -= current_gyro_bias_->x;
     imu_msg.angular_velocity.y -= current_gyro_bias_->y;
     imu_msg.angular_velocity.z -= current_gyro_bias_->z;
-    RCLCPP_INFO(this->get_logger(), "変更 gyro bias");
+    // RCLCPP_INFO(this->get_logger(), "変更 gyro bias");
   } else {
     imu_msg.angular_velocity.x -= angular_velocity_offset_x_imu_link_;
     imu_msg.angular_velocity.y -= angular_velocity_offset_y_imu_link_;
     imu_msg.angular_velocity.z -= angular_velocity_offset_z_imu_link_;
-    RCLCPP_INFO(this->get_logger(), "既定値 gyro bias");
+    // RCLCPP_INFO(this->get_logger(), "既定値 gyro bias");
   }
 
   imu_msg.angular_velocity_covariance[COV_IDX::X_X] =

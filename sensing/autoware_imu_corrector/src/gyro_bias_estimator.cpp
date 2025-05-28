@@ -33,8 +33,12 @@ GyroBiasEstimator::GyroBiasEstimator(const rclcpp::NodeOptions & options)
   angular_velocity_offset_z_(declare_parameter<double>("angular_velocity_offset_z")),
   timer_callback_interval_sec_(declare_parameter<double>("timer_callback_interval_sec")),
   diagnostics_updater_interval_sec_(declare_parameter<double>("diagnostics_updater_interval_sec")),
-  straight_motion_ang_vel_upper_limit_(
-    declare_parameter<double>("straight_motion_ang_vel_upper_limit")),
+  // straight_motion_ang_vel_upper_limit_(
+  //   declare_parameter<double>("straight_motion_ang_vel_upper_limit")),
+  // 新しく追加
+  vehicle_stop_velocity_threshold_(declare_parameter<double>("vehicle_stop_velocity_threshold")),
+  vehicle_stop_angular_velocity_threshold_(
+    declare_parameter<double>("vehicle_stop_angular_velocity_threshold")),
   updater_(this),
   gyro_bias_(std::nullopt)
 {
@@ -125,9 +129,10 @@ void GyroBiasEstimator::callback_twist_with_covariance(
   const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr msg)
 {
   latest_twist_with_covariance_msg_ = msg;
-  RCLCPP_INFO(
-    this->get_logger(), "Received twist_with_covariance: linear.x=%.6f, linear.y=%.6f, angular.z=%.6f",
-    msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.angular.z);
+  // RCLCPP_INFO(
+  //   this->get_logger(),
+  //   "Received twist_with_covariance: linear.x=%.6f, linear.y=%.6f, angular.z=%.6f",
+  //   msg->twist.twist.linear.x, msg->twist.twist.linear.y, msg->twist.twist.angular.z);
 }
 
 void GyroBiasEstimator::timer_callback()
@@ -166,19 +171,70 @@ void GyroBiasEstimator::timer_callback()
   }
 
   // Check if the vehicle is moving straight
-  const geometry_msgs::msg::Vector3 rpy_0 =
-    autoware::universe_utils::getRPY(pose_buf.front().pose.orientation);
-  const geometry_msgs::msg::Vector3 rpy_1 =
-    autoware::universe_utils::getRPY(pose_buf.back().pose.orientation);
-  const double yaw_diff = std::abs(autoware::universe_utils::normalizeRadian(rpy_1.z - rpy_0.z));
-  const double time_diff = (t1_rclcpp_time - t0_rclcpp_time).seconds();
-  const double yaw_vel = yaw_diff / time_diff;
-  const bool is_straight = (yaw_vel < straight_motion_ang_vel_upper_limit_);
-  if (!is_straight) {
+  // const geometry_msgs::msg::Vector3 rpy_0 =
+  //   autoware::universe_utils::getRPY(pose_buf.front().pose.orientation);
+  // const geometry_msgs::msg::Vector3 rpy_1 =
+  //   autoware::universe_utils::getRPY(pose_buf.back().pose.orientation);
+  // const double yaw_diff = std::abs(autoware::universe_utils::normalizeRadian(rpy_1.z - rpy_0.z));
+  // const double time_diff = (t1_rclcpp_time - t0_rclcpp_time).seconds();
+  // const double yaw_vel = yaw_diff / time_diff;
+  // const bool is_straight = (yaw_vel < straight_motion_ang_vel_upper_limit_);
+  // if (!latest_twist_with_covariance_msg_) {
+  //   diagnostics_info_.summary_message = "Skipped update (twist_with_covariance is nota
+  //   vailable)"; return;
+  // }
+
+  // ここから変更：twist_with_covarianceを使った停車判定
+  if (!latest_twist_with_covariance_msg_) {
     diagnostics_info_.summary_message =
-      "Skipped update (yaw angular velocity is greater than straight_motion_ang_vel_upper_limit)";
+      "Skipped update (twist_with_covariance data is not available)";
+    RCLCPP_INFO(this->get_logger(), "なに？Skipped update (vehicle is not stopped: linear_vel=");
     return;
   }
+
+  // 最新のtwist_with_covarianceデータが古すぎないかチェック
+  const double twist_data_age =
+    (this->now() - rclcpp::Time(latest_twist_with_covariance_msg_->header.stamp)).seconds();
+  if (twist_data_age > 1.0) {  // 1秒以上古いデータは使わない
+    diagnostics_info_.summary_message = "Skipped update (twist_with_covariance data is too old)";
+    RCLCPP_INFO(
+      this->get_logger(), "データ古いぞSkipped update (vehicle is not stopped: linear_vel=");
+    return;
+  }
+
+  // 停車判定：線形速度と角速度の両方をチェック
+  const auto & twist = latest_twist_with_covariance_msg_->twist.twist;
+  const double linear_velocity = std::sqrt(
+    twist.linear.x * twist.linear.x + twist.linear.y * twist.linear.y +
+    twist.linear.z * twist.linear.z);
+  const double angular_velocity = std::abs(twist.angular.z);  // ヨー角速度のみチェック
+
+  const bool is_vehicle_stopped = (linear_velocity < vehicle_stop_velocity_threshold_) &&
+                                  (angular_velocity < vehicle_stop_angular_velocity_threshold_);
+
+  if (!is_vehicle_stopped) {
+    diagnostics_info_.summary_message =
+      "ここには入るときあるSkipped update (vehicle is not stopped: linear_vel=" +
+      std::to_string(linear_velocity) + " m/s, angular_vel=" + std::to_string(angular_velocity) +
+      " rad/s)";
+    RCLCPP_INFO(
+      this->get_logger(),
+      "ここには入るときあるSkipped update (vehicle is not stopped: linear_vel=");
+    return;
+  }
+
+  RCLCPP_INFO(
+    this->get_logger(), "停車時のみ推定: linear.x=%.6f, linear.y=%.6f, angular.z=%.6f",
+    twist.linear.x, twist.linear.y, twist.angular.z);
+
+  // const double angular_velocity_z = latest_twist_with_covariance_msg_->twist.twist.angular.z;
+  // const bool is_straight = (std::abs(angular_velocity_z) < straight_motion_ang_vel_upper_limit_);
+  // if (!is_straight) {
+  //   diagnostics_info_.summary_message =
+  //     "Skipped update (yaw angular velocity is greater than
+  //     straight_motion_ang_vel_upper_limit)";
+  //   return;
+  // }
 
   // Calculate gyro bias
   gyro_bias_estimation_module_->update_bias(pose_buf, gyro_filtered);
