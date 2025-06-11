@@ -53,6 +53,9 @@ private:
   void callback_twist_with_covariance(const TwistWithCovarianceStamped::ConstSharedPtr msg);
   void timer_callback();
   void validate_gyro_bias();
+  
+  // 新規追加：車両停止判定関数
+  bool is_vehicle_currently_stopped();
 
   static geometry_msgs::msg::Vector3 transform_vector3(
     const geometry_msgs::msg::Vector3 & vec,
@@ -92,6 +95,11 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped> pose_buf_;
 
   TwistWithCovarianceStamped::ConstSharedPtr latest_twist_with_covariance_msg_;
+
+  // 新規追加：停車時データ蓄積管理用メンバー変数
+  bool is_vehicle_stopped_previous_;          // 前回の停車状態を記録
+  size_t stopped_sample_count_;               // 停車時のサンプル数カウンタ
+  static constexpr size_t TARGET_STOPPED_SAMPLES = 100;  // 目標サンプル数
 
   struct DiagnosticsInfo
   {
