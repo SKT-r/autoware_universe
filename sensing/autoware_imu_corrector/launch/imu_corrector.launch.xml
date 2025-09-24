@@ -2,22 +2,22 @@
 <launch>
   <arg name="input_imu_raw" default="/sensing/imu/tamagawa/imu_raw"/>
   <arg name="input_odom" default="/localization/kinematic_state"/>
-  <arg name="input_pose_ndt" default="/localization/pose_estimator/pose"/>
+  <arg name="input_pose_ndt" default="/localization/pose_estimator/pose_with_covariance"/>
   <arg name="input_twist" default="/sensing/vehicle_velocity_converter/twist_with_covariance"/>
 
   <!-- Gyro Bias Estimator Original -->
-  <node pkg="autoware_imu_corrector" exec="gyro_bias_estimator_node" name="gyro_bias_estimator_original" output="both">
+  <node pkg="autoware_imu_corrector" exec="gyro_bias_estimator_node" name="gyro_bias_estimator" output="both">
     <remap from="~/input/imu_raw" to="$(var input_imu_raw)"/>
     <remap from="~/input/odom" to="$(var input_odom)"/>
-    <remap from="~/output/gyro_bias" to="/sensing/imu/gyro_bias_original"/>
+    <remap from="~/output/gyro_bias" to="/sensing/imu/gyro_bias"/>
     <param from="$(find-pkg-share autoware_imu_corrector)/config/gyro_bias_estimator.param.yaml"/>
     <param from="$(find-pkg-share autoware_imu_corrector)/config/imu_corrector.param.yaml"/>
   </node>
 
   <!-- IMU Corrector Original -->
-  <node pkg="autoware_imu_corrector" exec="imu_corrector_node" name="imu_corrector_original" output="both">
+  <node pkg="autoware_imu_corrector" exec="imu_corrector_node" name="imu_corrector" output="both">
     <remap from="input" to="$(var input_imu_raw)"/>
-    <remap from="output" to="/sensing/imu/imu_corrected_original"/>
+    <remap from="output" to="/sensing/imu/imu_data"/>
     <param from="$(find-pkg-share autoware_imu_corrector)/config/imu_corrector.param.yaml"/>
   </node>
 
@@ -42,7 +42,7 @@
     <remap from="input" to="$(var input_imu_raw)"/>
     <remap from="gyro_bias_input" to="/sensing/imu/gyro_bias_sergio"/>
     <remap from="gyro_scale_input" to="/sensing/imu/gyro_scale_sergio"/>
-    <remap from="output" to="/sensing/imu/imu_corrected_sergio"/>
+    <remap from="output" to="/sensing/imu/imu_data_sergio"/>
     <param from="$(find-pkg-share autoware_imu_corrector)/config/imu_corrector.param.yaml"/>
   </node>
 
@@ -60,7 +60,7 @@
   <node pkg="autoware_imu_corrector" exec="imu_corrector_sakata_node" name="imu_corrector_sakata" output="both">
     <remap from="input" to="$(var input_imu_raw)"/>
     <remap from="gyro_bias" to="/sensing/imu/gyro_bias_sakata"/>
-    <remap from="output" to="/sensing/imu/imu_corrected_sakata"/>
+    <remap from="output" to="/sensing/imu/imu_data_sakata"/>
     <param from="$(find-pkg-share autoware_imu_corrector)/config/imu_corrector.param.yaml"/>
   </node>
 

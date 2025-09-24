@@ -380,6 +380,10 @@ void GyroBiasEstimatorSergio::estimate_scale_gyro(
 
   const double angle_tolerance_eval = 0.1;
   // New implementation EKF using angle instead of yaw rate
+  RCLCPP_INFO(
+    this->get_logger(), "左辺 %f 右辺 %f バイアス %d 角度 %f", std::abs(gyro_yaw_rate_),
+    threshold_to_estimate_scale_, gyro_bias_.has_value() ? 1 : 0,
+    std::abs(ndt_yaw_angle_ - x_state_(0)));
   if (
     std::abs(gyro_yaw_rate_) > threshold_to_estimate_scale_ && gyro_bias_.has_value() &&
     std::abs(ndt_yaw_angle_ - x_state_(0)) < angle_tolerance_eval) {  // Avoid large jumps in angle
