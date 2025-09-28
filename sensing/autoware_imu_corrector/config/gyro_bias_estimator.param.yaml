@@ -4,3 +4,7 @@
     timer_callback_interval_sec: 0.1 # [sec]
     diagnostics_updater_interval_sec: 0.1 # [sec]
     straight_motion_ang_vel_upper_limit: 0.015 # [rad/s]
+
+    # Sakata方法用のパラメータ
+    vehicle_stop_velocity_threshold: 0.1 # [m/s] 停車判定用の速度閾値
+    vehicle_stop_angular_velocity_threshold: 0.05 # [rad/s] 停車判定用の角速度閾値

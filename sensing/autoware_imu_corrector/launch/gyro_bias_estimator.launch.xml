@@ -21,4 +21,19 @@
     <param from="$(var imu_corrector_param_file)"/>
     <param from="$(var gyro_scale_estimator_param_file)"/>
   </node>
+
+  <!-- Sakata method control -->
+  <arg name="enable_sakata_method" default="true"/>
+  <arg name="output_gyro_bias_sakata" default="gyro_bias_sakata"/>
+  
+  <!-- Sakata-based gyro bias estimator (conditional) -->
+  <node pkg="autoware_imu_corrector" exec="gyro_bias_estimator_sakata_node" output="both" if="$(var enable_sakata_method)">
+    <remap from="~/input/imu_raw" to="$(var input_imu_raw)"/>
+    <remap from="~/input/odom" to="$(var input_odom)"/>
+    <remap from="~/input/pose_ndt" to="$(var input_pose_ndt)"/>
+    <remap from="~/output/gyro_bias_sakata" to="$(var output_gyro_bias_sakata)"/>
+    <param from="$(var gyro_bias_estimator_param_file)"/>
+    <param from="$(var imu_corrector_param_file)"/>
+  </node>
+
 </launch>

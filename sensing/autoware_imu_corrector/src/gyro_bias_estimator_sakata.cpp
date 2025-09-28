@@ -53,7 +53,9 @@ GyroBiasEstimatorSakata::GyroBiasEstimatorSakata(const rclcpp::NodeOptions & opt
   odom_sub_ = create_subscription<Odometry>(
     "~/input/odom", rclcpp::SensorDataQoS(),
     [this](const Odometry::ConstSharedPtr msg) { callback_odom(msg); });
-  gyro_bias_pub_ = create_publisher<Vector3Stamped>("~/output/gyro_bias", rclcpp::SensorDataQoS());
+  // 出力トピック名を変更
+  gyro_bias_pub_ =
+    create_publisher<Vector3Stamped>("~/output/gyro_bias_sakata", rclcpp::SensorDataQoS());
   twist_with_covariance_sub_ = create_subscription<geometry_msgs::msg::TwistWithCovarianceStamped>(
     "/sensing/vehicle_velocity_converter/twist_with_covariance", rclcpp::QoS{10},
     std::bind(

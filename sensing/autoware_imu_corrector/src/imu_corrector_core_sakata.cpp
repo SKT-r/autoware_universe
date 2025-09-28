@@ -76,15 +76,16 @@ ImuCorrectorSakata::ImuCorrectorSakata(const rclcpp::NodeOptions & options)
   accel_stddev_imu_link_ = declare_parameter<double>("acceleration_stddev", 10000.0);
 
   imu_sub_ = create_subscription<sensor_msgs::msg::Imu>(
-    "input", rclcpp::QoS{1},
+    "input_sakata", rclcpp::QoS{1},
     std::bind(&ImuCorrectorSakata::callback_imu, this, std::placeholders::_1));
 
-  // ジャイロバイアスのサブスクリプションを追加
+  // Sakataの手法用のジャイロバイアス入力トピック名を変更
   gyro_bias_sub_ = create_subscription<geometry_msgs::msg::Vector3Stamped>(
-    "gyro_bias", rclcpp::SensorDataQoS(),
+    "gyro_bias_sakata", rclcpp::SensorDataQoS(),
     std::bind(&ImuCorrectorSakata::callback_gyro_bias, this, std::placeholders::_1));
 
-  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("output", rclcpp::QoS{10});
+  // Sakataの手法用の出力トピック名を変更
+  imu_pub_ = create_publisher<sensor_msgs::msg::Imu>("output_sakata", rclcpp::QoS{10});
 }
 
 void ImuCorrectorSakata::callback_gyro_bias(

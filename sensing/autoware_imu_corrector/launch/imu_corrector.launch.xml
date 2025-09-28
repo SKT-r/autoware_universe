@@ -15,4 +15,17 @@
     <param from="$(var param_file)"/>
     <param from="$(var param_scale_file)"/>
   </node>
+
+  <!-- Sakata method control -->
+  <arg name="enable_sakata_method" default="true"/>
+  <arg name="input_gyro_bias_sakata_topic" default="gyro_bias_sakata"/>
+  <arg name="output_sakata_topic" default="imu_data_sakata"/>
+
+  <!-- Sakata-based IMU corrector (conditional) -->
+  <node pkg="autoware_imu_corrector" exec="imu_corrector_sakata_node" output="both" if="$(var enable_sakata_method)">
+    <remap from="input_sakata" to="$(var input_topic)"/>
+    <remap from="gyro_bias_sakata" to="$(var input_gyro_bias_sakata_topic)"/>
+    <remap from="output_sakata" to="$(var output_sakata_topic)"/>
+    <param from="$(var param_file)"/>
+  </node>
 </launch>
