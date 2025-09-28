@@ -13,6 +13,16 @@ ament_auto_add_library(gyro_bias_estimator SHARED
   src/gyro_bias_estimation_module.cpp
 )
 
+# Sakata版（現在版・シンプル）
+ament_auto_add_library(imu_corrector_sakata SHARED
+  src/imu_corrector_core_sakata.cpp
+)
+
+ament_auto_add_library(gyro_bias_estimator_sakata SHARED
+  src/gyro_bias_estimator_sakata.cpp
+  src/gyro_bias_estimation_module.cpp
+)
+
 target_include_directories(gyro_bias_estimator
   PUBLIC include
 )
@@ -26,6 +36,19 @@ rclcpp_components_register_node(imu_corrector
 rclcpp_components_register_node(gyro_bias_estimator
   PLUGIN "autoware::imu_corrector::GyroBiasEstimator"
   EXECUTABLE gyro_bias_estimator_node
+  EXECUTOR SingleThreadedExecutor
+)
+
+# Node registrations - Sakata版
+rclcpp_components_register_node(imu_corrector_sakata
+  PLUGIN "autoware::imu_corrector::ImuCorrectorSakata"
+  EXECUTABLE imu_corrector_sakata_node
+  EXECUTOR SingleThreadedExecutor
+)
+
+rclcpp_components_register_node(gyro_bias_estimator_sakata
+  PLUGIN "autoware::imu_corrector::GyroBiasEstimatorSakata"
+  EXECUTABLE gyro_bias_estimator_sakata_node
   EXECUTOR SingleThreadedExecutor
 )
 
